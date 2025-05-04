@@ -1,11 +1,11 @@
 const { Client } = require('pg');
 
 const client = new Client({
-    user: 'your_user',
+    user: 'your_user',          
     host: 'localhost',
-    database: 'my_database',
-    password: 'your_password',
-    port: 5432,
+    database: 'my_database',   
+    password: 'mysecretpassword', 
+    port: 5433,                  
 });
 
 async function initializeDB() {
