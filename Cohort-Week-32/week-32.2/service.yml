@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  helloworld:
+    image: nginx
+    ports:
+      - "3000:80"
+    deploy:
+      replicas: 3
+      placement:
+        constraints:
+          - node.role == manager
