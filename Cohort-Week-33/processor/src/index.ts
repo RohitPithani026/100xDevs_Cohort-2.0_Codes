@@ -1,24 +1,25 @@
 import { PrismaClient } from "@prisma/client";
-import { Kafka } from "kafkajs";
+import {Kafka} from "kafkajs";
 
-const TOPIC_NAME = "zap-events";
+const TOPIC_NAME = "zap-events"
+
+const client = new PrismaClient();
 
 const kafka = new Kafka({
     clientId: 'outbox-processor',
     brokers: ['localhost:9092']
 })
 
-const client = new PrismaClient();
-
 async function main() {
-    const producer = kafka.producer();
+    const producer =  kafka.producer();
     await producer.connect();
 
-    while (1) {
+    while(1) {
         const pendingRows = await client.zapRunOutbox.findMany({
-            where: {},
+            where :{},
             take: 10
         })
+        console.log(pendingRows);
 
         producer.send({
             topic: TOPIC_NAME,
@@ -27,7 +28,7 @@ async function main() {
                     value: JSON.stringify({ zapRunId: r.zapRunId, stage: 0 })
                 }
             })
-        })
+        })  
 
         await client.zapRunOutbox.deleteMany({
             where: {
@@ -36,6 +37,8 @@ async function main() {
                 }
             }
         })
+
+        await new Promise(r => setTimeout(r, 3000));
     }
 }
 
