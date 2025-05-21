@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/parser.ts"],"version":"5.7.2"}
+{"root":["./src/email.ts","./src/index.ts","./src/parser.ts","./src/solana.ts"],"version":"5.7.2"}

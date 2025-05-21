@@ -1,7 +1,11 @@
+require('dotenv').config()
+
 import { PrismaClient } from "@prisma/client";
 import { JsonObject } from "@prisma/client/runtime/library";
 import { Kafka } from "kafkajs";
 import { parse } from "./parser";
+import { sendEmail } from "./email";
+import { sendSol } from "./solana";
 
 const prismaClient = new PrismaClient();
 const TOPIC_NAME = "zap-events";
@@ -65,12 +69,14 @@ async function main() {
                 const body = parse((currentAction.metadata as JsonObject)?.body as string, zapRunMetadata);
                 const to = parse((currentAction.metadata as JsonObject)?.email as string, zapRunMetadata);
                 console.log(`Sending out email ${to} body is ${body}`);
+                await sendEmail(to, body);
             }
 
             if (currentAction.type.id === "send-sol") {
                 const amount = parse((currentAction.metadata as JsonObject)?.amount as string, zapRunMetadata);
                 const address = parse((currentAction.metadata as JsonObject)?.address as string, zapRunMetadata);
                 console.log(`Sending out SOL of ${amount} to address ${address}`);
+                sendSol(address, amount);
             }
 
             //
