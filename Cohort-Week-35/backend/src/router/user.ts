@@ -17,14 +17,23 @@ userRouter.post("/signup", async (req, res) => {
         });
     }
 
-    try {  
-        await prismaClient.user.create({
-            data: {
-                username: parsedData.data.username,
-                password: parsedData.data.password,
-                name: parsedData.data.name
-            }
+    try {
+        await prismaClient.$transaction(async tx => {
+            const user = await tx.user.create({
+                data: {
+                    username: parsedData.data.username,
+                    password: parsedData.data.password,
+                    name: parsedData.data.name
+                }
+            })
+
+            await tx.userAccount.create({
+                data: {
+                    userId: user.id,
+                } 
+            })
         })
+
         res.json({
             message: "Signed up"
         })
@@ -36,25 +45,44 @@ userRouter.post("/signup", async (req, res) => {
 });
 
 userRouter.post("/signin", async (req, res) => {
-        const body = req.body;
-        const parsedData = SigninSchema.safeParse(body);
-    
-        const user = await prismaClient.user.findFirst({
-            where: { 
-                username: parsedData.data?.username,
-                password: parsedData.data?.password
-            }
-        })
-        if (!user) {
-            return res.status(403).json({
-                message: "Unable to log you in"
-            })
+    const body = req.body;
+    const parsedData = SigninSchema.safeParse(body);
+
+    const user = await prismaClient.user.findFirst({
+        where: {
+            username: parsedData.data?.username,
+            password: parsedData.data?.password
         }
-        const token = jwt.sign({
-            id: user.id
-        }, JWT_USER_PASS);
-    
-        return res.json({
-            token
+    })
+    if (!user) {
+        return res.status(403).json({
+            message: "Unable to log you in"
         })
+    }
+    const token = jwt.sign({
+        id: user.id
+    }, JWT_USER_PASS);
+
+    return res.json({
+        token
+    })
+});
+
+userRouter.post("/onramp", async (req, res) => {
+    const { userId, amount } = req.body;
+
+    await prismaClient.userAccount.update({
+        where: {
+            userId: userId
+        },
+        data: {
+            balance: {
+                increment: amount
+            }
+        }
+    })
+
+    return res.json({
+        
+    })
 });

@@ -17,14 +17,23 @@ merchantRouter.post("/signup", async (req, res) => {
         });
     }
 
-    try {  
-        await prismaClient.merchant.create({
-            data: {
-                username: parsedData.data.username,
-                password: parsedData.data.password,
-                name: parsedData.data.name
-            }
+    try {
+        await prismaClient.$transaction(async tx => {
+            const merchant = await tx.merchant.create({
+                data: {
+                    username: parsedData.data.username,
+                    password: parsedData.data.password,
+                    name: parsedData.data.name
+                }
+            })
+
+            await tx.merchantAccount.create({
+                data: {
+                    merchantId: merchant.id,
+                }
+            })
         })
+
         res.json({
             message: "Signed up"
         })
@@ -40,7 +49,7 @@ merchantRouter.post("/signin", async (req, res) => {
     const parsedData = SigninSchema.safeParse(body);
 
     const merchant = await prismaClient.merchant.findFirst({
-        where: { 
+        where: {
             username: parsedData.data?.username,
             password: parsedData.data?.password
         }
